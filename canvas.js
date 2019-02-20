@@ -1,6 +1,10 @@
 var canvas = document.querySelector('canvas');
 var cc = canvas.getContext('2d');
 
+canvas.ontouchstart = (e) => {
+    e.preventDefault();
+};
+
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 

@@ -1,8 +1,6 @@
 var canvas = document.querySelector('canvas');
 var cc = canvas.getContext('2d');
 
-var logger = document.querySelector('span');
-
 canvas.width = 500;
 canvas.height = 500;
 
@@ -135,7 +133,6 @@ function correctOffsetAndPos() {
 canvas.addEventListener("wheel", function(e){
   e.preventDefault();
   oldScale = {x:global.scale.x,y:global.scale.y};
-  logger.innerHTML = e.wheelDelta;
   dir = e.wheelDelta > 0 ? 1 : -1;
   amount = dir * Math.log10(Math.abs(e.wheelDelta)) ;
   global.scale.x += amount;

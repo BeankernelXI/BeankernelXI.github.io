@@ -15,14 +15,23 @@ const SimpleColor = {
   navy: '#000075', grey: '#a9a9a9', white: '#ffffff', black: '#000000',
 }; // https://sashat.me/2017/01/11/list-of-20-simple-distinct-colors/
 
-const defaultSquare = {color: SimpleColor.black}
+const defaultSquare = {color: SimpleColor.cyan, number: 1, active: false}
 
 const worldWidth = 1000
 const worldArray = new Array(worldWidth*worldWidth).fill(defaultSquare);
 function world(x,y){return worldArray[worldWidth*y + x];}
-worldArray[worldWidth* 12 + 12] = {color: SimpleColor.blue};
+worldArray[worldWidth*505 + 502] = {color: SimpleColor.blue, number: 0, active: true};
+worldArray[worldWidth*505 + 503] = {color: SimpleColor.blue, number: 1, active: false};
+worldArray[worldWidth*505 + 504] = {color: SimpleColor.blue, number: 2, active: false};
+worldArray[worldWidth*505 + 505] = {color: SimpleColor.blue, number: 3, active: false};
+worldArray[worldWidth*506 + 502] = {color: SimpleColor.blue, number: 4, active: false};
+worldArray[worldWidth*506 + 503] = {color: SimpleColor.blue, number: 5, active: false};
+worldArray[worldWidth*506 + 504] = {color: SimpleColor.blue, number: 6, active: false};
+worldArray[worldWidth*506 + 505] = {color: SimpleColor.blue, number: 7, active: false};
 
-
+const settings = {
+  textOn: true,
+};
 
 const global = {
   scale: {x:40,y:40}, // TODO: initialize based on canvas size
@@ -32,6 +41,8 @@ const global = {
   lastClick: {x:0,y:0},
 };
 
+// used by drawPips
+const whichPip = { 0:[], 1:[4], 2:[2,6], 3:[2,4,6], 4:[0,2,6,8], 5:[0,2,4,6,8], 6:[0,2,3,5,6,8], 7:[0,2,3,4,5,6,8], 8:[0,1,2,3,5,6,7,8] };
 
 const drawMargin = 1;
 
@@ -71,12 +82,31 @@ function cellDraw(x, y) {
 
   offset = {x:(global.scale.x * x - global.offset.x),
             y:(global.scale.y * y - global.offset.y)};
-
-  cc.fillStyle = world(global.pos.x+x,global.pos.y+y).color;
-  cc.fillRect(offset.x + drawMargin,
+  cell = world(global.pos.x+x,global.pos.y+y);
+  if (!cell.active){
+    cc.fillStyle = SimpleColor.black;
+    cc.fillRect(offset.x + drawMargin,
               offset.y + drawMargin,
               global.scale.x - drawMargin,
               global.scale.y - drawMargin)
+  } else {
+    cc.fillStyle = Object.values(SimpleColor)[cell.number];
+    cc.fillRect(offset.x + drawMargin,
+              offset.y + drawMargin,
+              global.scale.x - drawMargin,
+              global.scale.y - drawMargin)
+    if (settings.textOn){
+      drawPips(offset,cell.number);
+      // cc.fillStyle = SimpleColor.black;
+      // cc.font = global.scale.y + "px Georgia";
+      // cc.strokeStyle = SimpleColor.white;
+      // text = cell.number;
+      // width = cc.measureText(text).width;
+      // cc.lineWidth = global.scale.y/40; // experimental, feels right
+      // cc.strokeText(text, offset.x + (global.scale.x - width)/2, offset.y + global.scale.y*7/9);
+      // cc.fillText(text, offset.x + (global.scale.x - width)/2, offset.y + global.scale.y*7/9);
+    }
+  }
 }
 
 function findGlobal(pos) {
@@ -84,9 +114,9 @@ function findGlobal(pos) {
           y:global.pos.y + Math.floor((global.offset.y + pos.y)/global.scale.y) };
 }
 
-function setNextColor(pos) {
+function setActive(pos) {
   newTile = Object.assign({}, world(pos.x,pos.y)); // this is dup.....
-  newTile.color = SimpleColor.cyan;
+  newTile.active = true;
   worldArray[worldWidth*pos.y + pos.x] = newTile;
 }
 
@@ -95,17 +125,17 @@ function moveTowardCenter() {
   clickCenter = {x:(global.lastClick.x - global.pos.x + 0.5)*global.scale.x - global.offset.x,
                  y:(global.lastClick.y - global.pos.y + 0.5)*global.scale.y - global.offset.y};
 
-  xDistanceToCenter = clickCenter.x - canvasCenter.x
-  yDistanceToCenter = clickCenter.y - canvasCenter.y
+  DistanceToCenter = {x:clickCenter.x - canvasCenter.x,
+                      y:clickCenter.y - canvasCenter.y};
 
   // adjust offset and click location
-  global.offset.x += xDistanceToCenter/10;
-  global.offset.y += yDistanceToCenter/10;
+  global.offset.x += DistanceToCenter.x/10;
+  global.offset.y += DistanceToCenter.y/10;
 
   correctOffsetAndPos()
 
   // turn off moving if at center
-  if (xDistanceToCenter*xDistanceToCenter + yDistanceToCenter*yDistanceToCenter < 10){
+  if (DistanceToCenter.x*DistanceToCenter.x + DistanceToCenter.y*DistanceToCenter.y < 10){
     global.moving = false;
   }
 }
@@ -122,8 +152,42 @@ function correctOffsetAndPos() {
     global.offset.y -= error * global.scale.y;
     global.pos.y += error;
   }
-
 }
+
+
+function drawPips(offset,number) {
+  pipUnit = { x:global.scale.x / 10, y:global.scale.y / 10 };
+  cc.strokeStyle = SimpleColor.black;
+  cc.fillStyle = SimpleColor.black;
+  pips = whichPip[number];
+  for (var loc of pips) {
+    cc.beginPath();
+    switch(loc) {
+      case 0: cc.arc(offset.x + 2*pipUnit.x, offset.y + 2*pipUnit.y, pipUnit.y, 0, 2 * Math.PI); break;
+      case 1: cc.arc(offset.x + 5*pipUnit.x, offset.y + 2*pipUnit.y, pipUnit.y, 0, 2 * Math.PI); break;
+      case 2: cc.arc(offset.x + 8*pipUnit.x, offset.y + 2*pipUnit.y, pipUnit.y, 0, 2 * Math.PI); break;
+      case 3: cc.arc(offset.x + 2*pipUnit.x, offset.y + 5*pipUnit.y, pipUnit.y, 0, 2 * Math.PI); break;
+      case 4: cc.arc(offset.x + 5*pipUnit.x, offset.y + 5*pipUnit.y, pipUnit.y, 0, 2 * Math.PI); break;
+      case 5: cc.arc(offset.x + 8*pipUnit.x, offset.y + 5*pipUnit.y, pipUnit.y, 0, 2 * Math.PI); break;
+      case 6: cc.arc(offset.x + 2*pipUnit.x, offset.y + 8*pipUnit.y, pipUnit.y, 0, 2 * Math.PI); break;
+      case 7: cc.arc(offset.x + 5*pipUnit.x, offset.y + 8*pipUnit.y, pipUnit.y, 0, 2 * Math.PI); break;
+      case 8: cc.arc(offset.x + 8*pipUnit.x, offset.y + 8*pipUnit.y, pipUnit.y, 0, 2 * Math.PI); break;
+      default: console.log("something has gone wrong!!!!")
+    }
+    cc.stroke();
+    cc.fill();
+    cc.closePath();
+  }
+}
+////////////////////////////////////////////////////////////////////////////////
+///////////  SETTING SETTINGS  /////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+function textToggle() {
+  settings.textOn = !settings.textOn;
+}
+
+
 
 ////////////////////////////////////////////////////////////////////////////////
 ///////////  CLICK & TOUCH HANDLING  ///////////////////////////////////////////
@@ -151,7 +215,8 @@ function onClick(){
 // this will need to be broken out once there are other things to click on
 function handleClick(pos){
   globalPos = findGlobal(pos);
-  setNextColor(globalPos);
+  setActive(globalPos);
+
   global.lastClick = globalPos; // dup just in case
   global.moving = true;
 }

@@ -31,10 +31,11 @@ worldArray[worldWidth*506 + 505] = {color: SimpleColor.blue, number: 7, active: 
 
 const settings = {
   textOn: true,
+  pipsInstead: false,
 };
 
 const global = {
-  scale: {x:40,y:40}, // TODO: initialize based on canvas size
+  scale: {x:60,y:60}, // TODO: initialize based on canvas size
   pos: {x:500,y:500},
   offset: {x:63,y:63},
   moving: false,
@@ -96,15 +97,18 @@ function cellDraw(x, y) {
               global.scale.x - drawMargin,
               global.scale.y - drawMargin)
     if (settings.textOn){
-      drawPips(offset,cell.number);
-      // cc.fillStyle = SimpleColor.black;
-      // cc.font = global.scale.y + "px Georgia";
-      // cc.strokeStyle = SimpleColor.white;
-      // text = cell.number;
-      // width = cc.measureText(text).width;
-      // cc.lineWidth = global.scale.y/40; // experimental, feels right
-      // cc.strokeText(text, offset.x + (global.scale.x - width)/2, offset.y + global.scale.y*7/9);
-      // cc.fillText(text, offset.x + (global.scale.x - width)/2, offset.y + global.scale.y*7/9);
+      if (settings.pipsInstead) {
+        drawPips(offset,cell.number);
+      } else {
+        cc.fillStyle = SimpleColor.black;
+        cc.font = global.scale.y + "px Georgia";
+        cc.strokeStyle = SimpleColor.white;
+        text = cell.number;
+        width = cc.measureText(text).width;
+        cc.lineWidth = global.scale.y/40; // experimental, feels right
+        cc.strokeText(text, offset.x + (global.scale.x - width)/2, offset.y + global.scale.y*7/9);
+        cc.fillText(text, offset.x + (global.scale.x - width)/2, offset.y + global.scale.y*7/9);
+      }
     }
   }
 }
@@ -157,21 +161,22 @@ function correctOffsetAndPos() {
 
 function drawPips(offset,number) {
   pipUnit = { x:global.scale.x / 10, y:global.scale.y / 10 };
+  pipRadius = Math.min(pipUnit.x,pipUnit.y);
   cc.strokeStyle = SimpleColor.black;
   cc.fillStyle = SimpleColor.black;
   pips = whichPip[number];
   for (var loc of pips) {
     cc.beginPath();
     switch(loc) {
-      case 0: cc.arc(offset.x + 2*pipUnit.x, offset.y + 2*pipUnit.y, pipUnit.y, 0, 2 * Math.PI); break;
-      case 1: cc.arc(offset.x + 5*pipUnit.x, offset.y + 2*pipUnit.y, pipUnit.y, 0, 2 * Math.PI); break;
-      case 2: cc.arc(offset.x + 8*pipUnit.x, offset.y + 2*pipUnit.y, pipUnit.y, 0, 2 * Math.PI); break;
-      case 3: cc.arc(offset.x + 2*pipUnit.x, offset.y + 5*pipUnit.y, pipUnit.y, 0, 2 * Math.PI); break;
-      case 4: cc.arc(offset.x + 5*pipUnit.x, offset.y + 5*pipUnit.y, pipUnit.y, 0, 2 * Math.PI); break;
-      case 5: cc.arc(offset.x + 8*pipUnit.x, offset.y + 5*pipUnit.y, pipUnit.y, 0, 2 * Math.PI); break;
-      case 6: cc.arc(offset.x + 2*pipUnit.x, offset.y + 8*pipUnit.y, pipUnit.y, 0, 2 * Math.PI); break;
-      case 7: cc.arc(offset.x + 5*pipUnit.x, offset.y + 8*pipUnit.y, pipUnit.y, 0, 2 * Math.PI); break;
-      case 8: cc.arc(offset.x + 8*pipUnit.x, offset.y + 8*pipUnit.y, pipUnit.y, 0, 2 * Math.PI); break;
+      case 0: cc.arc(offset.x + 2*pipUnit.x, offset.y + 2*pipUnit.y, pipRadius, 0, 2 * Math.PI); break;
+      case 1: cc.arc(offset.x + 5*pipUnit.x, offset.y + 2*pipUnit.y, pipRadius, 0, 2 * Math.PI); break;
+      case 2: cc.arc(offset.x + 8*pipUnit.x, offset.y + 2*pipUnit.y, pipRadius, 0, 2 * Math.PI); break;
+      case 3: cc.arc(offset.x + 2*pipUnit.x, offset.y + 5*pipUnit.y, pipRadius, 0, 2 * Math.PI); break;
+      case 4: cc.arc(offset.x + 5*pipUnit.x, offset.y + 5*pipUnit.y, pipRadius, 0, 2 * Math.PI); break;
+      case 5: cc.arc(offset.x + 8*pipUnit.x, offset.y + 5*pipUnit.y, pipRadius, 0, 2 * Math.PI); break;
+      case 6: cc.arc(offset.x + 2*pipUnit.x, offset.y + 8*pipUnit.y, pipRadius, 0, 2 * Math.PI); break;
+      case 7: cc.arc(offset.x + 5*pipUnit.x, offset.y + 8*pipUnit.y, pipRadius, 0, 2 * Math.PI); break;
+      case 8: cc.arc(offset.x + 8*pipUnit.x, offset.y + 8*pipUnit.y, pipRadius, 0, 2 * Math.PI); break;
       default: console.log("something has gone wrong!!!!")
     }
     cc.stroke();
@@ -185,6 +190,9 @@ function drawPips(offset,number) {
 
 function textToggle() {
   settings.textOn = !settings.textOn;
+}
+function pipToggle() {
+  settings.pipsInstead = !settings.pipsInstead;
 }
 
 

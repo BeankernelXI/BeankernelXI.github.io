@@ -7,10 +7,17 @@
   <link rel="icon" href="favicon.png">
   <style type="text/css">
     body {
+      background-color:#bfef45;
     }
   </style>
 </head>
-<body>
+<body onload="colorChange()">
+  <script>
+    function colorChange(){
+      now = new Date;
+      document.body.style.backgroundColor = ['#fabebe','#469990','#e6beff','#9a6324','#fffac8','#aaffc3','#808000'][now.getDay()];
+    }
+  </script>
   <a href="mandelbrot.html">Mandelbrot Exercise</a>
   <br>
   <a href="grid-adventure.html">Grid Adventure Prototype</a>

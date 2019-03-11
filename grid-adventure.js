@@ -7,7 +7,7 @@ var context = canvas.getContext('2d');
 var buffer = document.createElement('canvas')
 var cc = buffer.getContext('2d')
 
-canvas.width = buffer.width = 500;
+canvas.width = buffer.width = 800;
 canvas.height = buffer.height = 500;
 
 const canvasWidth = canvas.width;

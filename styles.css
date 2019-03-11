@@ -1,0 +1,46 @@
+
+* {
+  margin:0px;
+}
+
+body {
+  background-color:#bfef45;
+  display: grid;
+  grid-gap: 5px;
+  margin: 5px;
+  grid-template-columns: 60px repeat(12,1fr) 60px;
+  grid-template-rows: auto;
+
+}
+
+.forhead {
+  grid-column: 1/-1;
+  grid-row: 1;
+  height: 60px;
+}
+
+
+.mandelbrot-image {
+  background-image: url(mandelbrot_banner.png);
+  grid-column: 3 / -3;
+}
+.grid-image {
+  background-image: url(grid_banner.png);
+  grid-column: 2 / -4;
+}
+
+.banner {
+  background-size: cover;
+  height: 200px;
+  border-radius: 10px;
+}
+
+/* Place text in the middle of the image */
+.mandelbrot-text {
+/*  text-align: center;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;*/
+}

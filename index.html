@@ -5,11 +5,7 @@
   <meta charset="utf-8">
   <title>Personal Projects</title>
   <link rel="icon" href="favicon.png">
-  <style type="text/css">
-    body {
-      background-color:#bfef45;
-    }
-  </style>
+  <link rel="stylesheet" type="text/css" href="styles.css">
 </head>
 <body onload="colorChange()">
   <script>
@@ -18,9 +14,13 @@
       document.body.style.backgroundColor = ['#fabebe','#469990','#e6beff','#9a6324','#fffac8','#aaffc3','#808000'][now.getDay()];
     }
   </script>
-  <a href="mandelbrot.html">Mandelbrot Exercise</a>
-  <br>
-  <a href="grid-adventure.html">Grid Adventure Prototype</a>
 
+  <div class="forhead"></div>
+
+  <a class="mandelbrot-image banner" href="mandelbrot.html"><!-- Mandelbrot Exercise --></a>
+
+  <a class="grid-image banner" href="grid-adventure.html"><!-- Grid Adventure Prototype --></a>
+
+  <script src="home.js"></script>
 </body>
 </html>

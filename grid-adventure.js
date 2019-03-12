@@ -25,9 +25,16 @@ const SimpleColor = {
 
 //////////  World  /////////////////////////////////////////////////////////////
 
-const defaultSquare = {color: SimpleColor.cyan, number: 1, active: false}
-const worldWidth = 1000
-const worldArray = new Array(worldWidth*worldWidth).fill(defaultSquare);
+const defaultCell = {
+                      color: SimpleColor.cyan,
+                      number: 1,
+                      state: 0, // 0:fog, 1: known, 2: clickable, 3:clicked, 3+:reclicked
+                      // Notes: "known" is only used on a respec. When respecing, all squares in a state > 1 are reduced to 1
+                      //   "clickable" does not mean that click will necessarily work. The graphics may indicate however this enum will not
+                      maximumState: 3, // quest locations, lookout points, cutscene triggers, etc. will be reclickable
+                      };
+const worldWidth = 1000;
+const worldArray = new Array(worldWidth*worldWidth).fill(defaultCell);
 function world(x,y){return worldArray[worldWidth*y + x];}
 
 //////////  Globals  ///////////////////////////////////////////////////////////
@@ -54,27 +61,28 @@ const drawMargin = 1; // difference between scale and tile (gap will be backgrou
 
 
 //* Only temporary ;) Will be moved to a world file asap
-worldArray[worldWidth*505 + 502] = {color: SimpleColor.blue, number: 0, active: true};
-worldArray[worldWidth*505 + 503] = {color: SimpleColor.blue, number: 1, active: false};
-worldArray[worldWidth*505 + 504] = {color: SimpleColor.blue, number: 2, active: false};
-worldArray[worldWidth*506 + 502] = {color: SimpleColor.blue, number: 3, active: false};
-worldArray[worldWidth*506 + 503] = {color: SimpleColor.blue, number: 4, active: false};
-worldArray[worldWidth*506 + 504] = {color: SimpleColor.blue, number: 5, active: false};
-worldArray[worldWidth*507 + 502] = {color: SimpleColor.blue, number: 6, active: false};
-worldArray[worldWidth*507 + 503] = {color: SimpleColor.blue, number: 7, active: false};
-worldArray[worldWidth*507 + 504] = {color: SimpleColor.blue, number: 8, active: false};
+// 
+// 
+worldArray[worldWidth*505 + 502] = {color: SimpleColor.blue, number: 0, state: 2, maximumState: 3};
+worldArray[worldWidth*505 + 503] = {color: SimpleColor.blue, number: 1, state: 0, maximumState: 3};
+worldArray[worldWidth*505 + 504] = {color: SimpleColor.blue, number: 2, state: 0, maximumState: 3};
+worldArray[worldWidth*506 + 502] = {color: SimpleColor.blue, number: 3, state: 0, maximumState: 3};
+worldArray[worldWidth*506 + 503] = {color: SimpleColor.blue, number: 4, state: 0, maximumState: 3};
+worldArray[worldWidth*506 + 504] = {color: SimpleColor.blue, number: 5, state: 0, maximumState: 3};
+worldArray[worldWidth*507 + 502] = {color: SimpleColor.blue, number: 6, state: 0, maximumState: 3};
+worldArray[worldWidth*507 + 503] = {color: SimpleColor.blue, number: 7, state: 0, maximumState: 3};
+worldArray[worldWidth*507 + 504] = {color: SimpleColor.blue, number: 8, state: 0, maximumState: 3};
 
-worldArray[worldWidth*505 + 507] = {color: SimpleColor.blue, number: 0, active: true};
-worldArray[worldWidth*505 + 509] = {color: SimpleColor.blue, number: 1, active: false};
-worldArray[worldWidth*505 + 511] = {color: SimpleColor.blue, number: 2, active: false};
-worldArray[worldWidth*507 + 507] = {color: SimpleColor.blue, number: 3, active: false};
-worldArray[worldWidth*507 + 509] = {color: SimpleColor.blue, number: 4, active: false};
-worldArray[worldWidth*507 + 511] = {color: SimpleColor.blue, number: 5, active: false};
-worldArray[worldWidth*509 + 507] = {color: SimpleColor.blue, number: 6, active: false};
-worldArray[worldWidth*509 + 509] = {color: SimpleColor.blue, number: 7, active: false};
-worldArray[worldWidth*509 + 511] = {color: SimpleColor.blue, number: 8, active: false};
+worldArray[worldWidth*505 + 507] = {color: SimpleColor.blue, number: 0, state: 2, maximumState: 3};
+worldArray[worldWidth*505 + 509] = {color: SimpleColor.blue, number: 1, state: 0, maximumState: 3};
+worldArray[worldWidth*505 + 511] = {color: SimpleColor.blue, number: 2, state: 0, maximumState: 3};
+worldArray[worldWidth*507 + 507] = {color: SimpleColor.blue, number: 3, state: 0, maximumState: 3};
+worldArray[worldWidth*507 + 509] = {color: SimpleColor.blue, number: 4, state: 0, maximumState: 3};
+worldArray[worldWidth*507 + 511] = {color: SimpleColor.blue, number: 5, state: 0, maximumState: 3};
+worldArray[worldWidth*509 + 507] = {color: SimpleColor.blue, number: 6, state: 0, maximumState: 3};
+worldArray[worldWidth*509 + 509] = {color: SimpleColor.blue, number: 7, state: 0, maximumState: 3};
+worldArray[worldWidth*509 + 511] = {color: SimpleColor.blue, number: 8, state: 0, maximumState: 3};
 //*/
-
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -116,42 +124,56 @@ start();
 ///////////  The Meat  /////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-function drawCell(x, y) {
-  offset = { x: (global.scale.x * x - global.offset.x), y: (global.scale.y * y - global.offset.y) };
-  cell = world(global.pos.x+x,global.pos.y+y);
-  if (!cell) {return;} // someday I will have a clever idea to handle this case
-  if (!cell.active){
-    drawEmptyCell(offset);
-  } else {
-    drawCellColor(offset,cell.number);
-    if (settings.textOn){
-      if (settings.pipsInstead) {
-        drawPips(offset,cell.number);
-      } else {
-        drawText(offset,cell.number);
-      }
+function findGlobal(loc) {
+  return {x:global.pos.x + Math.floor((global.offset.x + loc.x)/global.scale.x),
+          y:global.pos.y + Math.floor((global.offset.y + loc.y)/global.scale.y) };
+}
+
+// TODO: check for borders. (return dummy "void" object)
+function findNeighbors(pos) {
+  let neighbors = [];
+  neighbors[0] = dupCellIfDefault( {x:pos.x-1, y:pos.y}   ); // || voidCell
+  neighbors[1] = dupCellIfDefault( {x:pos.x,   y:pos.y+1} );
+  neighbors[2] = dupCellIfDefault( {x:pos.x+1, y:pos.y}   );
+  neighbors[3] = dupCellIfDefault( {x:pos.x,   y:pos.y-1} );
+  return neighbors;
+}
+
+
+// gonna need to revisit when we switch to chunks
+function clickCell(loc){
+  globalPos = findGlobal(loc);
+  let cell = world(globalPos.x,globalPos.y);
+  if (cell.state >= 2 && cell.state < cell.maximumState) { // clickable
+    let neighbors = findNeighbors(globalPos)
+    clickedNeighbors = neighbors.reduce((m,i)=> m + (i.state >= 3), 0);
+    if (clickedNeighbors >= cell.number) {
+      cell.state += 1;
+      for (neighbor of neighbors) {
+        if (neighbor.state == 0) { neighbor.state = 2;}
+      } 
     }
   }
+  global.lastClick = globalPos;
+  global.moving = true;
 }
 
-function findGlobal(pos) {
-  return {x:global.pos.x + Math.floor((global.offset.x + pos.x)/global.scale.x),
-          y:global.pos.y + Math.floor((global.offset.y + pos.y)/global.scale.y) };
-}
-
-function setActive(pos) {
-  newTile = Object.assign({}, world(pos.x,pos.y)); // this is dup.....
-  newTile.active = true;
-  worldArray[worldWidth*pos.y + pos.x] = newTile;
+// messy but #temporary
+function dupCellIfDefault(pos) {
+  let cell = world(pos.x,pos.y)
+  if (cell != defaultCell) { return cell;}
+  let newCell = Object.assign({}, cell); // this is dup.....
+  worldArray[worldWidth*pos.y + pos.x] = newCell;
+  return newCell;
 }
 
 function moveTowardCenter() {
 
-  clickCenter = {x:(global.lastClick.x - global.pos.x + 0.5)*global.scale.x - global.offset.x,
-                 y:(global.lastClick.y - global.pos.y + 0.5)*global.scale.y - global.offset.y};
+  let clickCenter = {x:(global.lastClick.x - global.pos.x + 0.5)*global.scale.x - global.offset.x,
+                     y:(global.lastClick.y - global.pos.y + 0.5)*global.scale.y - global.offset.y};
 
-  DistanceToCenter = {x:clickCenter.x - canvasCenter.x,
-                      y:clickCenter.y - canvasCenter.y};
+  let DistanceToCenter = {x:clickCenter.x - canvasCenter.x,
+                          y:clickCenter.y - canvasCenter.y};
 
   // adjust offset and click location
   global.offset.x += DistanceToCenter.x/10;
@@ -179,9 +201,40 @@ function correctOffsetAndPos() {
   }
 }
 
+///////////  Drawing  //////////////////////////////////////////////////////////
+
+function drawCell(x, y) {
+  let offset = { x: (global.scale.x * x - global.offset.x), y: (global.scale.y * y - global.offset.y) };
+  let cell = world(global.pos.x+x,global.pos.y+y);
+  if (!cell) {return;} // someday I will have a clever idea to handle this case
+  if (cell.state == 0){
+    drawEmptyCell(offset);
+  } else {
+    drawCellColor(offset,cell.number);
+    if(cell.state > 2) {
+      drawClaimedCell(offset);
+    }
+
+    if (settings.textOn){
+      if (settings.pipsInstead) {
+        drawPips(offset,cell.number);
+      } else {
+        drawText(offset,cell.number);
+      }
+    }
+  }
+}
 
 function drawCellColor(offset, number) {
   cc.fillStyle = Object.values(SimpleColor)[number];
+  cc.fillRect(offset.x + drawMargin,
+              offset.y + drawMargin,
+              global.scale.x - drawMargin,
+              global.scale.y - drawMargin)
+}
+
+function drawClaimedCell(offset) {
+  cc.fillStyle = "rgba(255, 255, 255, 0.5)";
   cc.fillRect(offset.x + drawMargin,
               offset.y + drawMargin,
               global.scale.x - drawMargin,
@@ -255,8 +308,8 @@ canvas.addEventListener("wheel", function(e){
   oldScale = {x:global.scale.x,y:global.scale.y};
   dir = e.wheelDelta > 0 ? 1 : -1;
   amount = dir * Math.log10(Math.abs(e.wheelDelta)) ;
-  global.scale.x += amount;
-  global.scale.y += amount;
+  global.scale.x *= 1 + 0.02*amount;
+  global.scale.y *= 1 + 0.02*amount;
 
   global.offset.x += (1 - oldScale.x/global.scale.x)*canvasCenter.x;
   global.offset.y += (1 - oldScale.y/global.scale.y)*canvasCenter.y;
@@ -265,18 +318,8 @@ canvas.addEventListener("wheel", function(e){
 
 canvas.addEventListener("click", onClick);
 function onClick(){
-  handleClick({ x:event.offsetX, y:event.offsetY});
+  clickCell({ x:event.offsetX, y:event.offsetY});
 };
-
-// this will need to be broken out further once there are other things to click on
-function handleClick(pos){
-  globalPos = findGlobal(pos);
-  setActive(globalPos);
-
-  global.lastClick = globalPos;
-  global.moving = true;
-}
-
 
 
 

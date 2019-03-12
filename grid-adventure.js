@@ -25,7 +25,7 @@ const SimpleColor = {
 
 //////////  World  /////////////////////////////////////////////////////////////
 
-const defaultCell = {
+const defaultCell = { // now unused
                       color: SimpleColor.cyan,
                       number: 1,
                       state: 0, // 0:fog, 1: known, 2: clickable, 3:clicked, 3+:reclicked
@@ -33,9 +33,16 @@ const defaultCell = {
                       //   "clickable" does not mean that click will necessarily work. The graphics may indicate however this enum will not
                       maximumState: 3, // quest locations, lookout points, cutscene triggers, etc. will be reclickable
                       };
-const worldWidth = 1000;
-const worldArray = new Array(worldWidth*worldWidth).fill(defaultCell);
-function world(x,y){return worldArray[worldWidth*y + x];}
+const voidCell = {color: SimpleColor.black, number: 9, state: -1, maximumState: -1}
+const worldWidth = 11;
+const worldHeight = worldArray.length / worldWidth;
+// const worldArray = new Array(worldWidth*worldWidth).fill(defaultCell);
+function world(x,y){
+  if(x >= worldWidth || x < 0 || y >= worldHeight || y < 0){
+    return voidCell;
+  }
+  return worldArray[worldWidth*y + x];
+}
 
 //////////  Globals  ///////////////////////////////////////////////////////////
 
@@ -46,7 +53,7 @@ const settings = {
 
 const global = {
   scale: {x:60,y:60}, // width and height of each cell
-  pos: {x:500,y:500}, // index into world array
+  pos: {x:0,y:0}, // index into world array
   offset: {x:43,y:43}, // distance from corner of canvas to corner of top-left cell
   moving: false, // save on updates
   lastClick: {x:0,y:0}, // as a pos ^
@@ -55,21 +62,21 @@ const global = {
 //////////  Other  /////////////////////////////////////////////////////////////
 
 // used by drawPips
-const whichPip = { 0:[], 1:[4], 2:[2,6], 3:[2,4,6], 4:[0,2,6,8], 5:[0,2,4,6,8], 6:[0,2,3,5,6,8], 7:[0,2,3,4,5,6,8], 8:[0,1,2,3,5,6,7,8] };
+const whichPip = { 0:[], 1:[4], 2:[2,6], 3:[2,4,6], 4:[0,2,6,8], 5:[0,2,4,6,8], 6:[0,2,3,5,6,8],
+                   7:[0,2,3,4,5,6,8], 8:[0,1,2,3,5,6,7,8], 9:[0,1,2,3,4,5,6,7,8] };
 
 const drawMargin = 1; // difference between scale and tile (gap will be background color by default)
 
-
-//* Only temporary ;) Will be moved to a world file asap
-
+/*
+// Also consider using Fetch API https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API
 function loadJSON(callback) {
 
   var xobj = new XMLHttpRequest();
   xobj.overrideMimeType("application/json");
   xobj.open('GET', 'worldmap.json', true);
+  // xobj.responseType = "json";
   xobj.onreadystatechange = function () {
     if (xobj.readyState == 4 && xobj.status == "200") {
-      // .open will NOT return a value but simply returns undefined in async mode so use a callback
       callback(xobj.responseText);
     }
   }
@@ -77,35 +84,13 @@ function loadJSON(callback) {
 
 }
 
-// Call to function with anonymous callback
 loadJSON(function(response) {
-// Do Something with the response e.g.
+  // try experimenting with that response type line above for automatic parsing
   jsonresponse = JSON.parse(response);
-  console.log(jsonresponse);
-// Assuming json data is wrapped in square brackets as Drew suggests
-//console.log(jsonresponse[0].name);
-
+  return jsonresponse;
 });
+/*/
 
-worldArray[worldWidth*505 + 502] = {color: SimpleColor.blue, number: 0, state: 2, maximumState: 3};
-worldArray[worldWidth*505 + 503] = {color: SimpleColor.blue, number: 1, state: 0, maximumState: 3};
-worldArray[worldWidth*505 + 504] = {color: SimpleColor.blue, number: 2, state: 0, maximumState: 3};
-worldArray[worldWidth*506 + 502] = {color: SimpleColor.blue, number: 3, state: 0, maximumState: 3};
-worldArray[worldWidth*506 + 503] = {color: SimpleColor.blue, number: 4, state: 0, maximumState: 3};
-worldArray[worldWidth*506 + 504] = {color: SimpleColor.blue, number: 5, state: 0, maximumState: 3};
-worldArray[worldWidth*507 + 502] = {color: SimpleColor.blue, number: 6, state: 0, maximumState: 3};
-worldArray[worldWidth*507 + 503] = {color: SimpleColor.blue, number: 7, state: 0, maximumState: 3};
-worldArray[worldWidth*507 + 504] = {color: SimpleColor.blue, number: 8, state: 0, maximumState: 3};
-
-worldArray[worldWidth*505 + 507] = {color: SimpleColor.blue, number: 0, state: 2, maximumState: 3};
-worldArray[worldWidth*505 + 509] = {color: SimpleColor.blue, number: 1, state: 0, maximumState: 3};
-worldArray[worldWidth*505 + 511] = {color: SimpleColor.blue, number: 2, state: 0, maximumState: 3};
-worldArray[worldWidth*507 + 507] = {color: SimpleColor.blue, number: 3, state: 0, maximumState: 3};
-worldArray[worldWidth*507 + 509] = {color: SimpleColor.blue, number: 4, state: 0, maximumState: 3};
-worldArray[worldWidth*507 + 511] = {color: SimpleColor.blue, number: 5, state: 0, maximumState: 3};
-worldArray[worldWidth*509 + 507] = {color: SimpleColor.blue, number: 6, state: 0, maximumState: 3};
-worldArray[worldWidth*509 + 509] = {color: SimpleColor.blue, number: 7, state: 0, maximumState: 3};
-worldArray[worldWidth*509 + 511] = {color: SimpleColor.blue, number: 8, state: 0, maximumState: 3};
 //*/
 
 
@@ -156,10 +141,10 @@ function findGlobal(loc) {
 // TODO: check for borders. (return dummy "void" object)
 function findNeighbors(pos) {
   let neighbors = [];
-  neighbors[0] = dupCellIfDefault( {x:pos.x-1, y:pos.y}   ); // || voidCell
-  neighbors[1] = dupCellIfDefault( {x:pos.x,   y:pos.y+1} );
-  neighbors[2] = dupCellIfDefault( {x:pos.x+1, y:pos.y}   );
-  neighbors[3] = dupCellIfDefault( {x:pos.x,   y:pos.y-1} );
+  neighbors[0] = world( pos.x-1, pos.y   ); // || voidCell
+  neighbors[1] = world( pos.x,   pos.y+1 );
+  neighbors[2] = world( pos.x+1, pos.y   );
+  neighbors[3] = world( pos.x,   pos.y-1 );
   return neighbors;
 }
 
@@ -183,13 +168,13 @@ function clickCell(loc){
 }
 
 // messy but #temporary
-function dupCellIfDefault(pos) {
-  let cell = world(pos.x,pos.y)
-  if (cell != defaultCell) { return cell;}
-  let newCell = Object.assign({}, cell); // this is dup.....
-  worldArray[worldWidth*pos.y + pos.x] = newCell;
-  return newCell;
-}
+// function dupCellIfDefault(pos) {
+//   let cell = world(pos.x,pos.y)
+//   if (cell != defaultCell) { return cell;}
+//   let newCell = Object.assign({}, cell); // this is dup.....
+//   worldArray[worldWidth*pos.y + pos.x] = newCell;
+//   return newCell;
+// }
 
 function moveTowardCenter() {
 
@@ -230,8 +215,9 @@ function correctOffsetAndPos() {
 function drawCell(x, y) {
   let offset = { x: (global.scale.x * x - global.offset.x), y: (global.scale.y * y - global.offset.y) };
   let cell = world(global.pos.x+x,global.pos.y+y);
-  if (!cell) {return;} // someday I will have a clever idea to handle this case
-  if (cell.state == 0){
+  if (cell.state < 0){
+    drawVoidCell(offset);
+  } else if (cell.state == 0){
     drawEmptyCell(offset);
   } else {
     drawCellColor(offset,cell.color);
@@ -250,7 +236,7 @@ function drawCell(x, y) {
 }
 
 function drawCellColor(offset, color) {
-  cc.fillStyle = color //Object.values(SimpleColor)[number];
+  cc.fillStyle = color // Object.values(SimpleColor)[number];
   cc.fillRect(offset.x + drawMargin,
               offset.y + drawMargin,
               global.scale.x - drawMargin,
@@ -263,6 +249,22 @@ function drawClaimedCell(offset) {
               offset.y + drawMargin,
               global.scale.x - drawMargin,
               global.scale.y - drawMargin)
+}
+
+function drawEmptyCell(offset) {
+  cc.fillStyle = "#202030";
+  cc.fillRect(offset.x + drawMargin,
+              offset.y + drawMargin,
+              global.scale.x - drawMargin,
+              global.scale.y - drawMargin);
+}
+
+function drawVoidCell(offset) {
+  cc.fillStyle = SimpleColor.black;
+  cc.fillRect(offset.x + drawMargin,
+                offset.y + drawMargin,
+                global.scale.x - drawMargin,
+                global.scale.y - drawMargin);
 }
 
 function drawPips(offset, number) {
@@ -300,14 +302,6 @@ function drawText(offset, number) {
   cc.lineWidth = global.scale.y/40; // experimental, feels right
   cc.strokeText(text, offset.x + (global.scale.x - width)/2, offset.y + global.scale.y*7/9);
   cc.fillText(text, offset.x + (global.scale.x - width)/2, offset.y + global.scale.y*7/9);
-}
-
-function drawEmptyCell(offset) {
-  cc.fillStyle = SimpleColor.black;
-  cc.fillRect(offset.x + drawMargin,
-              offset.y + drawMargin,
-              global.scale.x - drawMargin,
-              global.scale.y - drawMargin)
 }
 
 ////////////////////////////////////////////////////////////////////////////////

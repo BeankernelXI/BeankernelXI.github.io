@@ -61,8 +61,32 @@ const drawMargin = 1; // difference between scale and tile (gap will be backgrou
 
 
 //* Only temporary ;) Will be moved to a world file asap
-// 
-// 
+
+function loadJSON(callback) {
+
+  var xobj = new XMLHttpRequest();
+  xobj.overrideMimeType("application/json");
+  xobj.open('GET', 'worldmap.json', true);
+  xobj.onreadystatechange = function () {
+    if (xobj.readyState == 4 && xobj.status == "200") {
+      // .open will NOT return a value but simply returns undefined in async mode so use a callback
+      callback(xobj.responseText);
+    }
+  }
+  xobj.send(null);
+
+}
+
+// Call to function with anonymous callback
+loadJSON(function(response) {
+// Do Something with the response e.g.
+  jsonresponse = JSON.parse(response);
+  console.log(jsonresponse);
+// Assuming json data is wrapped in square brackets as Drew suggests
+//console.log(jsonresponse[0].name);
+
+});
+
 worldArray[worldWidth*505 + 502] = {color: SimpleColor.blue, number: 0, state: 2, maximumState: 3};
 worldArray[worldWidth*505 + 503] = {color: SimpleColor.blue, number: 1, state: 0, maximumState: 3};
 worldArray[worldWidth*505 + 504] = {color: SimpleColor.blue, number: 2, state: 0, maximumState: 3};
@@ -210,7 +234,7 @@ function drawCell(x, y) {
   if (cell.state == 0){
     drawEmptyCell(offset);
   } else {
-    drawCellColor(offset,cell.number);
+    drawCellColor(offset,cell.color);
     if(cell.state > 2) {
       drawClaimedCell(offset);
     }
@@ -225,8 +249,8 @@ function drawCell(x, y) {
   }
 }
 
-function drawCellColor(offset, number) {
-  cc.fillStyle = Object.values(SimpleColor)[number];
+function drawCellColor(offset, color) {
+  cc.fillStyle = color //Object.values(SimpleColor)[number];
   cc.fillRect(offset.x + drawMargin,
               offset.y + drawMargin,
               global.scale.x - drawMargin,

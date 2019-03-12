@@ -15,7 +15,7 @@ worldArray = [
   {"color":"#d9d9d9","number":1,"state":0,"maximumState":3},
   {"color":"#d9d9d9","number":1,"state":0,"maximumState":3},
   {"color":"#666666","number":4,"state":0,"maximumState":3},
-  {"color":"#d9d9d9","number":1,"state":0,"maximumState":3},
+  {"color":"#ecdf49","number":1,"state":0,"maximumState":3},
   {"color":"#666666","number":4,"state":0,"maximumState":3},
   {"color":"#d9d9d9","number":1,"state":0,"maximumState":3},
   {"color":"#d9d9d9","number":1,"state":0,"maximumState":3},
